@@ -1,10 +1,15 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx", // Veya "react" eski React projelerinde
+    "target": "ESNext",
     "module": "ESNext",
+    "strict": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["node_modules"]
 }
