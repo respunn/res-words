@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "jsx": "react-jsx", // Veya "react" eski React projelerinde
+    "jsx": "react-jsx",
     "target": "ESNext",
     "module": "ESNext",
     "strict": true,
