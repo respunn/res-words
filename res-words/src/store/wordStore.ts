@@ -1,43 +1,51 @@
 import { create } from 'zustand';
 import { Word } from '../types';
 
-const sampleWords: Word[] = [
-  {
-    id: '1',
-    word: 'hello',
-    definition: 'Used as a greeting or to begin a conversation',
-    example: 'Hello, how are you today?',
-    difficulty: 'beginner'
-  },
-  {
-    id: '2',
-    word: 'world',
-    definition: 'The earth, together with all of its countries and peoples',
-    example: 'He wants to travel around the world.',
-    difficulty: 'beginner'
-  },
-  {
-    id: '3',
-    word: 'learn',
-    definition: 'Gain or acquire knowledge of or skill in something by study, experience, or being taught',
-    example: 'I am learning English.',
-    difficulty: 'beginner'
-  },
-  {
-    id: '4',
-    word: 'algorithm',
-    definition: 'A process or set of rules to be followed in calculations or other problem-solving operations',
-    example: 'The search algorithm helps find information quickly.',
-    difficulty: 'advanced'
-  },
-  {
-    id: '5',
-    word: 'coffee',
-    definition: 'A hot drink made from the roasted and ground seeds of a tropical shrub',
-    example: 'Would you like a cup of coffee?',
-    difficulty: 'beginner'
+const getWords = async (difficulty: 'beginner' | 'intermediate' | 'advanced'): Promise<Word | null> => {
+  try {
+    const lengthMap = {
+      beginner: { minlength: 3, maxlength: 5 },
+      intermediate: { minlength: 6, maxlength: 8 },
+      advanced: { minlength: 9, maxlength: 12 },
+    };
+    const { minlength, maxlength } = lengthMap[difficulty];
+
+    while (true) {
+      // Rastgele kelime çek
+      const response = await fetch(`https://random-word.ryanrk.com/api/en/word/random/?minlength=${minlength}&maxlength=${maxlength}`);
+      const wordsArray = await response.json();
+      const word = wordsArray[0];
+      console.log('Fetched random word:', word);
+
+      // Kelime detaylarını çek
+      const response2 = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+      if (!response2.ok) {
+        console.warn(`No definition found for word: ${word}`);
+        continue; // Anlam bulunamadığında başka bir kelimeye geç
+      }
+
+      const wordDetails = await response2.json();
+      const firstMeaning = wordDetails[0]?.meanings[0]?.definitions[0];
+      if (!firstMeaning) {
+        console.warn(`No valid definition structure for word: ${word}`);
+        continue; // Anlam yapısı düzgün değilse başka bir kelimeye geç
+      }
+
+      // Word tipiyle uyumlu bir yapı döndür
+      return {
+        id: word,
+        word,
+        definition: firstMeaning.definition,
+        example: firstMeaning.example || 'No example available.',
+        difficulty,
+      };
+    }
+  } catch (error) {
+    console.error('Error fetching word details:', error);
+    return null;
   }
-];
+};
+
 
 interface WordState {
   currentWord: Word | null;
@@ -45,8 +53,8 @@ interface WordState {
   upcomingWords: Word[];
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   setDifficulty: (difficulty: 'beginner' | 'intermediate' | 'advanced') => void;
-  fetchWords: () => void;
-  moveToNextWord: () => void;
+  fetchWords: () => Promise<void>;
+  moveToNextWord: () => Promise<void>;
 }
 
 export const useWordStore = create<WordState>((set, get) => ({
@@ -58,25 +66,30 @@ export const useWordStore = create<WordState>((set, get) => ({
     set({ difficulty });
     get().fetchWords();
   },
-  fetchWords: () => {
-    const filteredWords = sampleWords.filter(word => word.difficulty === get().difficulty);
-    set({
-      currentWord: filteredWords[0] || null,
-      upcomingWords: filteredWords.slice(1),
-      previousWords: [],
-    });
+  fetchWords: async () => {
+    try {
+      const { difficulty } = get();
+      const newWord = await getWords(difficulty);
+      if (newWord) {
+        set({
+          currentWord: newWord,
+          upcomingWords: [],
+          previousWords: [],
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching words:', error);
+    }
   },
-  moveToNextWord: () => {
-    const { currentWord, previousWords, upcomingWords } = get();
-    if (currentWord && upcomingWords.length > 0) {
+  moveToNextWord: async () => {
+    const { currentWord, previousWords, difficulty } = get();
+    const newWord = await getWords(difficulty);
+    if (newWord) {
       set({
-        previousWords: [...previousWords, currentWord],
-        currentWord: upcomingWords[0],
-        upcomingWords: upcomingWords.slice(1),
+        previousWords: currentWord ? [...previousWords, currentWord] : previousWords,
+        currentWord: newWord,
+        upcomingWords: [],
       });
-    } else {
-      // Reset to the beginning when we run out of words
-      get().fetchWords();
     }
   },
 }));
