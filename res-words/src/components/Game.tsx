@@ -182,6 +182,9 @@ export default function Game() {
                 <button
                   type="button"
                   className={`px-6 w-18 bg-orange-400 hover:bg-orange-600 text-white rounded-lg transition-colors`}
+                  onClick={() => {
+                    handleNextWord();
+                  }}
                 >
                   Geç
                 </button>

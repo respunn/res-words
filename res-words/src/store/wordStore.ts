@@ -66,7 +66,7 @@ export const useWordStore = create<WordState>((set, get) => ({
     try {
       const { difficulty } = get();
       const newWord = await getWords(difficulty);
-      const nextWord = await getWords(difficulty); // Bir sonraki kelimeyi hazırla
+      const nextWord = await getWords(difficulty);
       if (newWord) {
         set({
           currentWord: newWord,
@@ -80,7 +80,7 @@ export const useWordStore = create<WordState>((set, get) => ({
   },
   moveToNextWord: async () => {
     const { currentWord, previousWords, upcomingWords, difficulty } = get();
-    const nextWord = await getWords(difficulty); // Bir sonraki kelimeyi önceden hazırla
+    const nextWord = await getWords(difficulty);
     const newCurrentWord = upcomingWords[0];
 
     if (newCurrentWord) {
