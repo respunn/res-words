@@ -2,7 +2,7 @@ export interface Word {
   id: string;
   word: string;
   definition: string;
-  example: string;
+  pronunciation: string;
   difficulty: 'beginner' | 'intermediate' | 'advanced';
 }
 

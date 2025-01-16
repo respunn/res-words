@@ -11,29 +11,37 @@ const getWords = async (difficulty: 'beginner' | 'intermediate' | 'advanced'): P
     const { minlength, maxlength } = lengthMap[difficulty];
 
     while (true) {
-      const response = await fetch(`https://random-word.ryanrk.com/api/en/word/random/?minlength=${minlength}&maxlength=${maxlength}`);
+      const response = await fetch(`http://localhost:3002/word/`);
       const wordsArray = await response.json();
-      const word = wordsArray[0];
-      console.log('Fetched random word:', word);
+      const word = wordsArray.word;
+      const definition = wordsArray.definition;
+      const pronunciation = wordsArray.pronunciation;
+      // console.log('Fetched random word:', word, definition);
+      // console.log('Fetched random word:', word, meaning);
 
-      const response2 = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
-      if (!response2.ok) {
-        console.warn(`No definition found for word: ${word}`);
-        continue;
-      }
+      // const response = await fetch(`https://random-word.ryanrk.com/api/en/word/random/?minlength=${minlength}&maxlength=${maxlength}`);
+      // const wordsArray = await response.json();
+      // const word = wordsArray[0];
+      // console.log('Fetched random word:', word);
 
-      const wordDetails = await response2.json();
-      const firstMeaning = wordDetails[0]?.meanings[0]?.definitions[0];
-      if (!firstMeaning) {
-        console.warn(`No valid definition structure for word: ${word}`);
-        continue;
-      }
+      // const response2 = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+      // if (!response2.ok) {
+      //   console.warn(`No definition found for word: ${word}`);
+      //   continue;
+      // }
+
+      // const wordDetails = await response2.json();
+      // const firstMeaning = wordDetails[0]?.meanings[0]?.definitions[0];
+      // if (!firstMeaning) {
+      //   console.warn(`No valid definition structure for word: ${word}`);
+      //   continue;
+      // }
 
       return {
         id: word,
         word,
-        definition: firstMeaning.definition,
-        example: firstMeaning.example || 'No example available.',
+        definition: definition,
+        pronunciation: pronunciation || 'No pronunciation available',
         difficulty,
       };
     }

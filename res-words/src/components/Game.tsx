@@ -201,11 +201,11 @@ export default function Game() {
                 >
                   <div className="bg-purple-50 p-4 rounded-lg">
                     <h3 className="font-semibold text-purple-800 mb-2">Anlam:</h3>
-                    <p className="text-gray-700">{currentWord.definition}</p>
+                    <p className="text-gray-700">{currentWord.definition.slice(0, -2 )}.</p>
                   </div>
                   <div className="bg-purple-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-purple-800 mb-2">Örnek:</h3>
-                    <p className="text-gray-700 italic">{currentWord.example}</p>
+                    <h3 className="font-semibold text-purple-800 mb-2">Telaffuz:</h3>
+                    <p className="text-gray-700 italic">{currentWord.pronunciation}</p>
                   </div>
                 </motion.div>
               )}
