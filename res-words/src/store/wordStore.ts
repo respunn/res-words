@@ -1,42 +1,21 @@
 import { create } from 'zustand';
 import { Word } from '../types';
 
-const getWords = async (difficulty: 'beginner' | 'intermediate' | 'advanced'): Promise<Word | null> => {
+const getWords = async (difficulty: 'beginner'): Promise<Word | null> => {
   try {
-    const lengthMap = {
-      beginner: { minlength: 3, maxlength: 5 },
-      intermediate: { minlength: 6, maxlength: 8 },
-      advanced: { minlength: 9, maxlength: 12 },
+    const response = await fetch(`http://localhost:3002/word/english`);
+    const wordsArray = await response.json();
+    const word = wordsArray[0];
+    console.log('Fetched random word:', wordsArray);
+    console.log('Fetched random word:', word);
+
+    return {
+      id: word,
+      word,
+      definition: 'No definition available.', // Placeholder definition
+      example: 'No example available.', // Placeholder example
+      difficulty,
     };
-    const { minlength, maxlength } = lengthMap[difficulty];
-
-    while (true) {
-      const response = await fetch(`https://random-word.ryanrk.com/api/en/word/random/?minlength=${minlength}&maxlength=${maxlength}`);
-      const wordsArray = await response.json();
-      const word = wordsArray[0];
-      console.log('Fetched random word:', word);
-
-      const response2 = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
-      if (!response2.ok) {
-        console.warn(`No definition found for word: ${word}`);
-        continue;
-      }
-
-      const wordDetails = await response2.json();
-      const firstMeaning = wordDetails[0]?.meanings[0]?.definitions[0];
-      if (!firstMeaning) {
-        console.warn(`No valid definition structure for word: ${word}`);
-        continue;
-      }
-
-      return {
-        id: word,
-        word,
-        definition: firstMeaning.definition,
-        example: firstMeaning.example || 'No example available.',
-        difficulty,
-      };
-    }
   } catch (error) {
     console.error('Error fetching word details:', error);
     return null;
@@ -47,8 +26,8 @@ interface WordState {
   currentWord: Word | null;
   previousWords: Word[];
   upcomingWords: Word[];
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  setDifficulty: (difficulty: 'beginner' | 'intermediate' | 'advanced') => void;
+  difficulty: 'beginner';
+  isFetching: boolean;
   fetchWords: () => Promise<void>;
   moveToNextWord: () => Promise<void>;
 }
@@ -58,15 +37,15 @@ export const useWordStore = create<WordState>((set, get) => ({
   previousWords: [],
   upcomingWords: [],
   difficulty: 'beginner',
-  setDifficulty: (difficulty) => {
-    set({ difficulty });
-    get().fetchWords();
-  },
+  isFetching: false,
   fetchWords: async () => {
+    const { isFetching } = get();
+    if (isFetching) return; // Prevent fetching if already fetching a word
+
+    set({ isFetching: true });
     try {
-      const { difficulty } = get();
-      const newWord = await getWords(difficulty);
-      const nextWord = await getWords(difficulty);
+      const newWord = await getWords('beginner');
+      const nextWord = await getWords('beginner');
       if (newWord) {
         set({
           currentWord: newWord,
@@ -76,22 +55,33 @@ export const useWordStore = create<WordState>((set, get) => ({
       }
     } catch (error) {
       console.error('Error fetching words:', error);
+    } finally {
+      set({ isFetching: false });
     }
   },
   moveToNextWord: async () => {
-    const { currentWord, previousWords, upcomingWords, difficulty } = get();
-    const nextWord = await getWords(difficulty);
-    const newCurrentWord = upcomingWords[0];
+    const { currentWord, previousWords, upcomingWords, isFetching } = get();
+    if (isFetching) return;
 
-    if (newCurrentWord) {
-      set({
-        previousWords: currentWord ? [...previousWords, currentWord] : previousWords,
-        currentWord: newCurrentWord,
-        upcomingWords: nextWord ? [nextWord] : [],
-      });
-    } else {
-      console.warn('No upcoming word available, fetching a new word.');
-      get().fetchWords();
+    set({ isFetching: true });
+    try {
+      const nextWord = await getWords('beginner');
+      const newCurrentWord = upcomingWords[0];
+
+      if (newCurrentWord) {
+        set({
+          previousWords: currentWord ? [...previousWords, currentWord] : previousWords,
+          currentWord: newCurrentWord,
+          upcomingWords: nextWord ? [nextWord] : [],
+        });
+      } else {
+        console.warn('No upcoming word available, fetching a new word.');
+        get().fetchWords();
+      }
+    } catch (error) {
+      console.error('Error moving to next word:', error);
+    } finally {
+      set({ isFetching: false });
     }
   },
 }));
